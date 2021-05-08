@@ -128,15 +128,15 @@ func (es *ExpressionStatement) String() string {
 	return ""
 }
 
-type IntegerLiteral struct {
+type FloatLiteral struct {
 	Token token.Token
-	Value int64
+	Value float64
 }
 
-func (il *IntegerLiteral) expressionNode()      {}
-func (il *IntegerLiteral) Type() token.Type     { return il.Token.Type }
-func (il *IntegerLiteral) TokenLiteral() string { return il.Token.Literal }
-func (il *IntegerLiteral) String() string       { return il.Token.Literal }
+func (il *FloatLiteral) expressionNode()      {}
+func (il *FloatLiteral) Type() token.Type     { return il.Token.Type }
+func (il *FloatLiteral) TokenLiteral() string { return il.Token.Literal }
+func (il *FloatLiteral) String() string       { return il.Token.Literal }
 
 type PrefixExpression struct {
 	Token    token.Token // The prefix token, e.g. !

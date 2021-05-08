@@ -12,10 +12,10 @@ var builtins = map[string]*Builtin{
 			}
 			switch arg := args[0].(type) {
 			case *String:
-				return &Integer{Value: int64(len(arg.Value))}
+				return &Float{Value: float64(len(arg.Value))}
 
 			case *Array:
-				return &Integer{Value: int64(len(arg.Elements))}
+				return &Float{Value: float64(len(arg.Elements))}
 
 			default:
 				return newError("argument to `panjang` not supported, got %s", args[0].Type())

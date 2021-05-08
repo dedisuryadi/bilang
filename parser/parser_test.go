@@ -202,7 +202,7 @@ func TestIdentifierExpression(t *testing.T) {
 	}
 }
 
-func TestIntegerLiteralExpression(t *testing.T) {
+func TestFloatLiteralExpression(t *testing.T) {
 	input := "5;"
 	l := lexer.New(input)
 	p := New(l)
@@ -218,12 +218,12 @@ func TestIntegerLiteralExpression(t *testing.T) {
 	if !ok {
 		t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T", program.Statements[0])
 	}
-	literal, ok := stmt.Expression.(*ast.IntegerLiteral)
+	literal, ok := stmt.Expression.(*ast.FloatLiteral)
 	if !ok {
-		t.Fatalf("exp not *ast.IntegerLiteral. got=%T", stmt.Expression)
+		t.Fatalf("exp not *ast.FloatLiteral. got=%T", stmt.Expression)
 	}
 	if literal.Value != 5 {
-		t.Errorf("literal.Value not %d. got=%d", 5, literal.Value)
+		t.Errorf("literal.Value not %d. got=%G", 5, literal.Value)
 	}
 	if literal.TokenLiteral() != "5" {
 		t.Errorf("literal.TokenLiteral not %s. got=%s", "5", literal.TokenLiteral())
@@ -320,18 +320,18 @@ func TestLoopExpressions(t *testing.T) {
 	}
 }
 
-func testIntegerLiteral(t *testing.T, il ast.Expression, value int64) bool {
-	integ, ok := il.(*ast.IntegerLiteral)
+func testFloatLiteral(t *testing.T, il ast.Expression, value float64) bool {
+	integ, ok := il.(*ast.FloatLiteral)
 	if !ok {
-		t.Errorf("il not *ast.IntegerLiteral. got=%T", il)
+		t.Errorf("il not *ast.FloatLiteral. got=%T", il)
 		return false
 	}
 	if integ.Value != value {
-		t.Errorf("integ.Value not %d. got=%d", value, integ.Value)
+		t.Errorf("integ.Value not %G. got=%G", value, integ.Value)
 		return false
 	}
-	if integ.TokenLiteral() != fmt.Sprintf("%d", value) {
-		t.Errorf("integ.TokenLiteral not %d. got=%s", value, integ.TokenLiteral())
+	if integ.TokenLiteral() != fmt.Sprintf("%G", value) {
+		t.Errorf("integ.TokenLiteral not %G. got=%s", value, integ.TokenLiteral())
 		return false
 	}
 	return true
@@ -548,9 +548,11 @@ func testLiteralExpression(t *testing.T, exp ast.Expression, expected interface{
 	case bool:
 		return testBooleanLiteral(t, exp, v)
 	case int:
-		return testIntegerLiteral(t, exp, int64(v))
+		return testFloatLiteral(t, exp, float64(v))
 	case int64:
-		return testIntegerLiteral(t, exp, v)
+		return testFloatLiteral(t, exp, float64(v))
+	case float32:
+		return testFloatLiteral(t, exp, float64(v))
 	case string:
 		return testIdentifier(t, exp, v)
 	}
@@ -952,7 +954,7 @@ func TestParsingArrayLiterals(t *testing.T) {
 	if len(array.Elements) != 3 {
 		t.Fatalf("len(array.Elements) not 3. got=%d", len(array.Elements))
 	}
-	testIntegerLiteral(t, array.Elements[0], 1)
+	testFloatLiteral(t, array.Elements[0], 1)
 	testInfixExpression(t, array.Elements[1], 2, "*", 2)
 	testInfixExpression(t, array.Elements[2], 3, "+", 3)
 }
@@ -996,7 +998,7 @@ func TestParsingHashLiteralsStringKeys(t *testing.T) {
 	if len(hash.Pairs) != 3 {
 		t.Errorf("hash.Pairs has wrong length. got=%d", len(hash.Pairs))
 	}
-	expected := map[string]int64{
+	expected := map[string]float64{
 		"one":   1,
 		"two":   2,
 		"three": 3,
@@ -1007,7 +1009,7 @@ func TestParsingHashLiteralsStringKeys(t *testing.T) {
 			t.Errorf("key is not ast.StringLiteral. got=%T", key)
 		}
 		expectedValue := expected[literal.String()]
-		testIntegerLiteral(t, value, expectedValue)
+		testFloatLiteral(t, value, expectedValue)
 	}
 }
 

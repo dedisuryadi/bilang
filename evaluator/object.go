@@ -12,7 +12,7 @@ import (
 type Type string
 
 const (
-	INTEGER  = "INTEGER"
+	FLOAT    = "FLOAT"
 	BOOLEAN  = "BOOLEAN"
 	NULL     = "NULL"
 	RETURN   = "RETURN"
@@ -47,12 +47,12 @@ type Builtin struct {
 func (b *Builtin) Type() Type      { return BUILTIN }
 func (b *Builtin) Inspect() string { return "builtin function" }
 
-type Integer struct {
-	Value int64
+type Float struct {
+	Value float64
 }
 
-func (i *Integer) Type() Type      { return INTEGER }
-func (i *Integer) Inspect() string { return fmt.Sprintf("%d", i.Value) }
+func (i *Float) Type() Type      { return FLOAT }
+func (i *Float) Inspect() string { return fmt.Sprintf("%G", i.Value) }
 
 type Boolean struct {
 	Value bool
@@ -185,7 +185,7 @@ func (b *Boolean) HashKey() HashKey {
 	}
 	return HashKey{Type: b.Type(), Value: value}
 }
-func (i *Integer) HashKey() HashKey {
+func (i *Float) HashKey() HashKey {
 	return HashKey{Type: i.Type(), Value: uint64(i.Value)}
 }
 func (s *String) HashKey() HashKey {

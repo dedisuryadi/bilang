@@ -8,10 +8,10 @@ import (
 	"github.com/dedisuryadi/bilang/parser"
 )
 
-func TestEvalIntegerExpression(t *testing.T) {
+func TestEvalFloatExpression(t *testing.T) {
 	tests := []struct {
 		input    string
-		expected int64
+		expected float64
 	}{
 		{"5", 5},
 		{"10", 10},
@@ -32,7 +32,7 @@ func TestEvalIntegerExpression(t *testing.T) {
 	}
 	for _, tt := range tests {
 		evaluated := testEval(tt.input)
-		testIntegerObject(t, evaluated, tt.expected)
+		testFloatObject(t, evaluated, tt.expected)
 	}
 }
 
@@ -48,14 +48,14 @@ func testEval(input string) Object {
 	return script.Eval(program, env)
 }
 
-func testIntegerObject(t *testing.T, obj Object, expected int64) bool {
-	result, ok := obj.(*Integer)
+func testFloatObject(t *testing.T, obj Object, expected float64) bool {
+	result, ok := obj.(*Float)
 	if !ok {
-		t.Errorf("object is not Integer. got=%T (%+v)", obj, obj)
+		t.Errorf("object is not Float. got=%T (%+v)", obj, obj)
 		return false
 	}
 	if result.Value != expected {
-		t.Errorf("object has wrong value. got=%d, want=%d", result.Value, expected)
+		t.Errorf("object has wrong value. got=%G, want=%G", result.Value, expected)
 		return false
 	}
 	return true
@@ -170,7 +170,7 @@ func TestIfElseExpressions(t *testing.T) {
 		evaluated := testEval(tt.input)
 		integer, ok := tt.expected.(int)
 		if ok {
-			testIntegerObject(t, evaluated, int64(integer))
+			testFloatObject(t, evaluated, float64(integer))
 		} else {
 			testNullObject(t, evaluated)
 		}
@@ -187,7 +187,7 @@ func testNullObject(t *testing.T, obj Object) bool {
 func TestReturnStatements(t *testing.T) {
 	tests := []struct {
 		input    string
-		expected int64
+		expected float64
 	}{
 		{"pilih 10;", 10},
 		{"pilih 10; 9;", 10},
@@ -204,7 +204,7 @@ jika (10 > 1) {
 	}
 	for _, tt := range tests {
 		evaluated := testEval(tt.input)
-		testIntegerObject(t, evaluated, tt.expected)
+		testFloatObject(t, evaluated, tt.expected)
 	}
 }
 
@@ -227,11 +227,11 @@ func TestErrorHandling(t *testing.T) {
 		},
 		{
 			"5 + benar;",
-			"type mismatch: INTEGER + BOOLEAN",
+			"type mismatch: FLOAT + BOOLEAN",
 		},
 		{
 			"5 + benar; 5;",
-			"type mismatch: INTEGER + BOOLEAN",
+			"type mismatch: FLOAT + BOOLEAN",
 		},
 		{
 			"-benar",
@@ -277,7 +277,7 @@ pilih 1;
 func TestVarStatements(t *testing.T) {
 	tests := []struct {
 		input    string
-		expected int64
+		expected float64
 		wantErr  bool
 	}{
 		{input: "var a = 5; a = \"foo\"; a;", wantErr: true},
@@ -291,7 +291,7 @@ func TestVarStatements(t *testing.T) {
 	for _, tt := range tests {
 		res := testEval(tt.input)
 		if !tt.wantErr {
-			testIntegerObject(t, res, tt.expected)
+			testFloatObject(t, res, tt.expected)
 			continue
 		}
 		_, ok := res.(*Error)
@@ -304,7 +304,7 @@ func TestVarStatements(t *testing.T) {
 func TestKonstStatements(t *testing.T) {
 	tests := []struct {
 		input    string
-		expected int64
+		expected float64
 		wantErr  bool
 	}{
 		{input: "konst a = 5; a = 10; a;", wantErr: true},
@@ -317,7 +317,7 @@ func TestKonstStatements(t *testing.T) {
 	for _, tt := range tests {
 		res := testEval(tt.input)
 		if !tt.wantErr {
-			testIntegerObject(t, res, tt.expected)
+			testFloatObject(t, res, tt.expected)
 			continue
 		}
 		_, ok := res.(*Error)
@@ -349,7 +349,7 @@ func TestFunctionObject(t *testing.T) {
 func TestFunctionApplication(t *testing.T) {
 	tests := []struct {
 		input    string
-		expected int64
+		expected float64
 	}{
 		{"var identity = fn(x) { x; }; identity(5);", 5},
 		{"var identity = fn(x) { pilih x; }; identity(5);", 5},
@@ -366,7 +366,7 @@ func TestFunctionApplication(t *testing.T) {
 		{"var addTo = x => y => x+y; var addFive = addTo(5); addFive(10);", 15},
 	}
 	for _, tt := range tests {
-		testIntegerObject(t, testEval(tt.input), tt.expected)
+		testFloatObject(t, testEval(tt.input), tt.expected)
 	}
 }
 
@@ -453,7 +453,7 @@ fn(y) { x + y };
 };
 var addTwo = newAdder(2);
 addTwo(2);`
-	testIntegerObject(t, testEval(input), 4)
+	testFloatObject(t, testEval(input), 4)
 }
 
 func TestStringLiteral(t *testing.T) {
@@ -488,14 +488,14 @@ func TestBuiltinFunctions(t *testing.T) {
 		{`panjang("")`, 0},
 		{`panjang("four")`, 4},
 		{`panjang("hello world")`, 11},
-		{`panjang(1)`, "argument to `panjang` not supported, got INTEGER"},
+		{`panjang(1)`, "argument to `panjang` not supported, got FLOAT"},
 		{`panjang("one", "two")`, "wrong number of arguments. got=2, want=1"},
 	}
 	for _, tt := range tests {
 		evaluated := testEval(tt.input)
 		switch expected := tt.expected.(type) {
 		case int:
-			testIntegerObject(t, evaluated, int64(expected))
+			testFloatObject(t, evaluated, float64(expected))
 		case string:
 			errObj, ok := evaluated.(*Error)
 			if !ok {
@@ -519,9 +519,9 @@ func TestArrayLiterals(t *testing.T) {
 	if len(result.Elements) != 3 {
 		t.Fatalf("array has wrong num of elements. got=%d", len(result.Elements))
 	}
-	testIntegerObject(t, result.Elements[0], 1)
-	testIntegerObject(t, result.Elements[1], 4)
-	testIntegerObject(t, result.Elements[2], 6)
+	testFloatObject(t, result.Elements[0], 1)
+	testFloatObject(t, result.Elements[1], 4)
+	testFloatObject(t, result.Elements[2], 6)
 }
 
 func TestArrayIndexExpressions(t *testing.T) {
@@ -613,7 +613,7 @@ func TestArrayIndexExpressions(t *testing.T) {
 		evaluated := testEval(tt.input)
 		integer, ok := tt.expected.(int)
 		if ok {
-			testIntegerObject(t, evaluated, int64(integer))
+			testFloatObject(t, evaluated, float64(integer))
 		} else {
 			testNullObject(t, evaluated)
 		}
@@ -639,7 +639,7 @@ salah: 6
 		(&String{Value: "one"}).HashKey():   1,
 		(&String{Value: "two"}).HashKey():   2,
 		(&String{Value: "three"}).HashKey(): 3,
-		(&Integer{Value: 4}).HashKey():      4,
+		(&Float{Value: 4}).HashKey():        4,
 		_TRUE.HashKey():                     5,
 		_FALSE.HashKey():                    6,
 	}
@@ -651,7 +651,7 @@ salah: 6
 		if !ok {
 			t.Errorf("no pair for given key in Pairs")
 		}
-		testIntegerObject(t, pair.Value, expectedValue)
+		testFloatObject(t, pair.Value, float64(expectedValue))
 	}
 }
 
@@ -693,7 +693,7 @@ func TestHashIndexExpressions(t *testing.T) {
 		evaluated := testEval(tt.input)
 		integer, ok := tt.expected.(int)
 		if ok {
-			testIntegerObject(t, evaluated, int64(integer))
+			testFloatObject(t, evaluated, float64(integer))
 		} else {
 			testNullObject(t, evaluated)
 		}

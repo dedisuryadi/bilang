@@ -2,6 +2,7 @@ package evaluator
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/dedisuryadi/bilang/ast"
 	"github.com/dedisuryadi/bilang/token"
@@ -102,8 +103,8 @@ func (s *Script) Eval(node ast.Node, env *Environment) Object {
 	case *ast.ExpressionStatement:
 		return s.Eval(node.Expression, env)
 
-	case *ast.IntegerLiteral:
-		return &Integer{Value: node.Value}
+	case *ast.FloatLiteral:
+		return &Float{Value: node.Value}
 
 	case *ast.PrefixExpression:
 		right := s.Eval(node.Right, env)
@@ -186,7 +187,7 @@ func (s *Script) evalHashLiteral(node *ast.HashLiteral, env *Environment) Object
 
 func evalIndexExpression(left, index Object) Object {
 	switch {
-	case left.Type() == ARRAY && index.Type() == INTEGER:
+	case left.Type() == ARRAY && index.Type() == FLOAT:
 		return evalArrayIndexExpression(left, index)
 	case left.Type() == HASH:
 		return evalHashIndexExpression(left, index)
@@ -213,14 +214,14 @@ func evalHashIndexExpression(hash, index Object) Object {
 
 func evalArrayIndexExpression(array, index Object) Object {
 	arrayObj := array.(*Array)
-	idx := index.(*Integer).Value
+	idx := index.(*Float).Value
 	max := int64(len(arrayObj.Elements) - 1)
 
-	if idx < 0 || idx > max {
+	if idx < 0 || int64(idx) > max {
 		return _NULL
 	}
 
-	return arrayObj.Elements[idx]
+	return arrayObj.Elements[int(idx)]
 }
 
 func nativeBoolToBooleanObject(value bool) Object {
@@ -271,11 +272,11 @@ func evalPrefixExpression(operator string, right Object) Object {
 }
 
 func evalMinusPrefixOperatorExpression(right Object) Object {
-	if right.Type() != INTEGER {
+	if right.Type() != FLOAT {
 		return newError("unknown operator: -%s", right.Type())
 	}
-	value := right.(*Integer).Value
-	return &Integer{Value: -value}
+	value := right.(*Float).Value
+	return &Float{Value: -value}
 }
 
 func evalBangOperatorExpression(right Object) Object {
@@ -295,8 +296,8 @@ func evalInfixExpression(operator string, left, right Object) Object {
 	switch {
 	case left.Type() != right.Type():
 		return newError("type mismatch: %s %s %s", left.Type(), operator, right.Type())
-	case left.Type() == INTEGER && right.Type() == INTEGER:
-		return evalIntegerInfixExpression(operator, left, right)
+	case left.Type() == FLOAT && right.Type() == FLOAT:
+		return evalFloatInfixExpression(operator, left, right)
 
 	case left.Type() == STRING && right.Type() == STRING:
 		return evalStringInfixExpression(operator, left, right)
@@ -335,20 +336,20 @@ func evalStringInfixExpression(operator string, left, right Object) Object {
 	}
 }
 
-func evalIntegerInfixExpression(operator string, left, right Object) Object {
-	leftVal := left.(*Integer).Value
-	rightVal := right.(*Integer).Value
+func evalFloatInfixExpression(operator string, left, right Object) Object {
+	leftVal := left.(*Float).Value
+	rightVal := right.(*Float).Value
 	switch operator {
 	case "%":
-		return &Integer{Value: leftVal % rightVal}
+		return &Float{Value: math.Mod(leftVal, rightVal)}
 	case "+":
-		return &Integer{Value: leftVal + rightVal}
+		return &Float{Value: leftVal + rightVal}
 	case "-":
-		return &Integer{Value: leftVal - rightVal}
+		return &Float{Value: leftVal - rightVal}
 	case "*":
-		return &Integer{Value: leftVal * rightVal}
+		return &Float{Value: leftVal * rightVal}
 	case "/":
-		return &Integer{Value: leftVal / rightVal}
+		return &Float{Value: leftVal / rightVal}
 	case "<":
 		return nativeBoolToBooleanObject(leftVal < rightVal)
 	case ">":
@@ -499,7 +500,7 @@ func (s *Script) evalLoopExpression(node *ast.LoopLiteral, env *Environment) Obj
 	case *String:
 		for k, v := range []rune(iter.Value) {
 			scope := NewEnclosedEnvironment(env)
-			scope.Set(node.KV[0].Value, &Integer{Value: int64(k)})
+			scope.Set(node.KV[0].Value, &Float{Value: float64(k)})
 			if complete {
 				scope.Set(node.KV[1].Value, &String{Value: string(v)})
 			}
@@ -537,7 +538,7 @@ func (s *Script) evalLoopExpression(node *ast.LoopLiteral, env *Environment) Obj
 	case *Array:
 		for k, v := range iter.Elements {
 			scope := NewEnclosedEnvironment(env)
-			scope.Set(node.KV[0].Value, &Integer{Value: int64(k)})
+			scope.Set(node.KV[0].Value, &Float{Value: float64(k)})
 			if complete {
 				scope.Set(node.KV[1].Value, v)
 			}
@@ -585,7 +586,7 @@ func isTruthy(obj Object) bool {
 		return false
 	default:
 		switch obj := obj.(type) {
-		case *Integer:
+		case *Float:
 			if obj.Value > 0 {
 				return true
 			}
@@ -609,8 +610,8 @@ func obj2Expression(obj Object) ast.Expression {
 	switch value := obj.(type) {
 	case *Boolean:
 		return &ast.Boolean{Value: value.Value}
-	case *Integer:
-		return &ast.IntegerLiteral{Value: value.Value}
+	case *Float:
+		return &ast.FloatLiteral{Value: value.Value}
 	case *String:
 		return &ast.StringLiteral{Value: value.Value}
 	case *Null:
