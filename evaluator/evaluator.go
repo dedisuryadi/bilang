@@ -75,6 +75,21 @@ func (s *Script) Eval(node ast.Node, env *Environment) Object {
 		}
 		return s.applyFunction(fn, args)
 
+	case *ast.MethodCallExpression:
+		if obj, ok := node.Object.(*ast.Identifier); ok {
+			if call, ok := node.Call.(*ast.CallExpression); ok {
+				fn, _ := call.Function.(*ast.Identifier)
+				obj.Value += "." + fn.Value
+				ident := evalIdentifier(obj, env)
+				args := s.evalExpression(call.Arguments, env)
+				if len(args) == 1 && isError(args[0]) {
+					return args[0]
+				}
+				return s.applyFunction(ident, args)
+			}
+		}
+		return NewError("invalid method call expression")
+
 	case *ast.StringLiteral:
 		return &String{Value: node.Value}
 
@@ -97,11 +112,11 @@ func (s *Script) Eval(node ast.Node, env *Environment) Object {
 		}
 		return &ReturnValue{Value: val}
 
-	case *ast.Program:
-		return s.evalProgram(node, env)
-
 	case *ast.ExpressionStatement:
 		return s.Eval(node.Expression, env)
+
+	case *ast.Program:
+		return s.evalProgram(node, env)
 
 	case *ast.FloatLiteral:
 		return &Float{Value: node.Value}
@@ -171,7 +186,7 @@ func (s *Script) evalHashLiteral(node *ast.HashLiteral, env *Environment) Object
 
 		pk, ok := key.(Hashable)
 		if !ok {
-			return newError("unusable as hash key: %s", key.Type())
+			return NewError("unusable as hash key: %s", key.Type())
 		}
 
 		value := s.Eval(v, env)
@@ -192,7 +207,7 @@ func evalIndexExpression(left, index Object) Object {
 	case left.Type() == HASH:
 		return evalHashIndexExpression(left, index)
 	default:
-		return newError("index operator not supported: %s", left.Type())
+		return NewError("index operator not supported: %s", left.Type())
 	}
 }
 
@@ -201,7 +216,7 @@ func evalHashIndexExpression(hash, index Object) Object {
 
 	key, ok := index.(Hashable)
 	if !ok {
-		return newError("unusable as hash key: %s", index.Type())
+		return NewError("unusable as hash key: %s", index.Type())
 	}
 
 	pair, ok := hashObject.Pairs[key.HashKey()]
@@ -267,13 +282,13 @@ func evalPrefixExpression(operator string, right Object) Object {
 	case "-":
 		return evalMinusPrefixOperatorExpression(right)
 	default:
-		return newError("unknown operator: %s%s", operator, right.Type())
+		return NewError("unknown operator: %s%s", operator, right.Type())
 	}
 }
 
 func evalMinusPrefixOperatorExpression(right Object) Object {
 	if right.Type() != FLOAT {
-		return newError("unknown operator: -%s", right.Type())
+		return NewError("unknown operator: -%s", right.Type())
 	}
 	value := right.(*Float).Value
 	return &Float{Value: -value}
@@ -295,7 +310,7 @@ func evalBangOperatorExpression(right Object) Object {
 func evalInfixExpression(operator string, left, right Object) Object {
 	switch {
 	case left.Type() != right.Type():
-		return newError("type mismatch: %s %s %s", left.Type(), operator, right.Type())
+		return NewError("type mismatch: %s %s %s", left.Type(), operator, right.Type())
 	case left.Type() == FLOAT && right.Type() == FLOAT:
 		return evalFloatInfixExpression(operator, left, right)
 
@@ -315,11 +330,11 @@ func evalInfixExpression(operator string, left, right Object) Object {
 		case "!=":
 			return nativeBoolToBooleanObject(left != right)
 		default:
-			return newError("unknown operator: %s %s %s", left.Type(), operator, right.Type())
+			return NewError("unknown operator: %s %s %s", left.Type(), operator, right.Type())
 		}
 
 	default:
-		return newError("unknown operator: %s %s %s", left.Type(), operator, right.Type())
+		return NewError("unknown operator: %s %s %s", left.Type(), operator, right.Type())
 	}
 }
 
@@ -332,7 +347,7 @@ func evalStringInfixExpression(operator string, left, right Object) Object {
 	case "==":
 		return nativeBoolToBooleanObject(leftVal == rightVal)
 	default:
-		return newError("unknown operator: %s %s %s", left.Type(), operator, right.Type())
+		return NewError("unknown operator: %s %s %s", left.Type(), operator, right.Type())
 	}
 }
 
@@ -363,7 +378,7 @@ func evalFloatInfixExpression(operator string, left, right Object) Object {
 	case "!=":
 		return nativeBoolToBooleanObject(leftVal != rightVal)
 	default:
-		return newError("unknown operator: %s %s %s", left.Type(), operator, right.Type())
+		return NewError("unknown operator: %s %s %s", left.Type(), operator, right.Type())
 	}
 }
 
@@ -454,7 +469,7 @@ func evalIdentifier(node *ast.Identifier, env *Environment) Object {
 	}
 	val, ok := env.Get(node.Value)
 	if !ok {
-		return newError("identifier not found: " + node.Value)
+		return NewError("identifier not found: " + node.Value)
 	}
 	return val
 }
@@ -475,7 +490,7 @@ func (s *Script) applyFunction(fn Object, args []Object) Object {
 	switch fn := fn.(type) {
 	case *Function:
 		if paramLen, argsLen := len(fn.Parameters), len(args); paramLen != argsLen {
-			return newError("invalid length between function parameter=%d & args=%d", paramLen, argsLen)
+			return NewError("invalid length between function parameter=%d & args=%d", paramLen, argsLen)
 		}
 		extendedEnv := extendFunctionEnv(fn, args)
 		evaluated := s.Eval(fn.Body, extendedEnv)
@@ -485,14 +500,14 @@ func (s *Script) applyFunction(fn Object, args []Object) Object {
 		return fn.Fn(args...)
 
 	default:
-		return newError("not a function: %s", fn.Type())
+		return NewError("not a function: %s", fn.Type())
 	}
 }
 
 func (s *Script) evalLoopExpression(node *ast.LoopLiteral, env *Environment) Object {
 	iter := evalIdentifier(node.Iter, env)
 	if iterable, ok := iter.(Iterable); !ok || !iterable.Iter() {
-		return newError("identifier %s is not iterable", node.Iter)
+		return NewError("identifier %s is not iterable", node.Iter)
 	}
 
 	complete := len(node.KV) > 1
@@ -555,7 +570,7 @@ func (s *Script) evalLoopExpression(node *ast.LoopLiteral, env *Environment) Obj
 		}
 
 	default:
-		return newError("type %s is not iterable", iter)
+		return NewError("type %s is not iterable", iter)
 	}
 
 	return _NULL
@@ -595,7 +610,7 @@ func isTruthy(obj Object) bool {
 	}
 }
 
-func newError(format string, a ...interface{}) *Error {
+func NewError(format string, a ...interface{}) *Error {
 	return &Error{Message: fmt.Sprintf(format, a...)}
 }
 func isError(obj Object) bool {

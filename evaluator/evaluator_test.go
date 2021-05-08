@@ -485,6 +485,8 @@ func TestBuiltinFunctions(t *testing.T) {
 		input    string
 		expected interface{}
 	}{
+		{`math.Min(10, 0)`, 0},
+		{`math.Max(0, 1)`, 1},
 		{`panjang("")`, 0},
 		{`panjang("four")`, 4},
 		{`panjang("hello world")`, 11},

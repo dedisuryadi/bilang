@@ -8,7 +8,7 @@ var builtins = map[string]*Builtin{
 	"panjang": {
 		Fn: func(args ...Object) Object {
 			if len(args) != 1 {
-				return newError("wrong number of arguments. got=%d, want=1", len(args))
+				return NewError("wrong number of arguments. got=%d, want=1", len(args))
 			}
 			switch arg := args[0].(type) {
 			case *String:
@@ -18,17 +18,17 @@ var builtins = map[string]*Builtin{
 				return &Float{Value: float64(len(arg.Elements))}
 
 			default:
-				return newError("argument to `panjang` not supported, got %s", args[0].Type())
+				return NewError("argument to `panjang` not supported, got %s", args[0].Type())
 			}
 		},
 	},
 	"awal": {
 		Fn: func(args ...Object) Object {
 			if len(args) != 1 {
-				return newError("wrong number of arguments. got=%d, want=1", len(args))
+				return NewError("wrong number of arguments. got=%d, want=1", len(args))
 			}
 			if args[0].Type() != ARRAY {
-				return newError("argument to `awal` must be ARRAY. got %s", args[0].Type())
+				return NewError("argument to `awal` must be ARRAY. got %s", args[0].Type())
 			}
 			arr := args[0].(*Array)
 			if len(arr.Elements) > 0 {
@@ -40,10 +40,10 @@ var builtins = map[string]*Builtin{
 	"akhir": {
 		Fn: func(args ...Object) Object {
 			if len(args) != 1 {
-				return newError("wrong number of arguments. got=%d, want=1", len(args))
+				return NewError("wrong number of arguments. got=%d, want=1", len(args))
 			}
 			if args[0].Type() != ARRAY {
-				return newError("argument to `akhir` must be ARRAY. got %s", args[0].Type())
+				return NewError("argument to `akhir` must be ARRAY. got %s", args[0].Type())
 			}
 			arr := args[0].(*Array)
 			Len := len(arr.Elements)
@@ -56,10 +56,10 @@ var builtins = map[string]*Builtin{
 	"ekor": {
 		Fn: func(args ...Object) Object {
 			if len(args) != 1 {
-				return newError("wrong number of arguments. got=%d, want=1", len(args))
+				return NewError("wrong number of arguments. got=%d, want=1", len(args))
 			}
 			if args[0].Type() != ARRAY {
-				return newError("argument to `ekor` must be ARRAY, got %s", args[0].Type())
+				return NewError("argument to `ekor` must be ARRAY, got %s", args[0].Type())
 			}
 			arr := args[0].(*Array)
 			Len := len(arr.Elements)
@@ -74,10 +74,10 @@ var builtins = map[string]*Builtin{
 	"push": {
 		Fn: func(args ...Object) Object {
 			if len(args) != 2 {
-				return newError("wrong number of arguments. got=%d, want=1", len(args))
+				return NewError("wrong number of arguments. got=%d, want=1", len(args))
 			}
 			if args[0].Type() != ARRAY {
-				return newError("argument to `push` must be ARRAY, got %s", args[0].Type())
+				return NewError("argument to `push` must be ARRAY, got %s", args[0].Type())
 			}
 			arr := args[0].(*Array)
 			Len := len(arr.Elements)
@@ -103,4 +103,10 @@ var builtins = map[string]*Builtin{
 			return _NULL
 		},
 	},
+}
+
+func init() {
+	for k, v := range mathBuiltin {
+		builtins[k] = v
+	}
 }

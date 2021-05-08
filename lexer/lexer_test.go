@@ -8,7 +8,8 @@ import (
 
 func TestNextToken(t *testing.T) {
 	input :=
-		`var five = 5;
+		`math.Min(10,0);
+		var five = 5;
 		var ten;
 		ten = 10;		
 
@@ -64,6 +65,16 @@ func TestNextToken(t *testing.T) {
 		expectedType    token.Type
 		expectedLiteral string
 	}{
+		{token.IDENT, "math"},
+		{token.DOT, "."},
+		{token.IDENT, "Min"},
+		{token.LPAREN, "("},
+		{token.INT, "10"},
+		{token.COMMA, ","},
+		{token.INT, "0"},
+		{token.RPAREN, ")"},
+		{token.SEMICOLON, ";"},
+
 		{token.VAR, "var"},
 		{token.IDENT, "five"},
 		{token.ASSIGN, "="},
