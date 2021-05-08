@@ -41,6 +41,10 @@ const (
 	SALAH      = "SALAH"
 	NIHIL      = "NIHIL"
 	STRING     = "STRING"
+	TIAP       = "TIAP"
+	DI         = "DI"
+	LANJUT     = "LANJUT"
+	USAI       = "USAI"
 	REGEX      = "REGEX"
 	LBRACKET   = "["
 	RBRACKET   = "]"
@@ -52,16 +56,20 @@ const (
 
 var (
 	keywords = map[string]Type{
-		"fn":    FUNCTION,
-		"var":   VAR,
-		"konst": KONST,
-		"jika":  JIKA,
-		"atau":  ATAU,
-		"pilah": PILAH,
-		"pilih": PILIH,
-		"benar": BENAR,
-		"salah": SALAH,
-		"nihil": NIHIL,
+		"fn":     FUNCTION,
+		"var":    VAR,
+		"konst":  KONST,
+		"jika":   JIKA,
+		"atau":   ATAU,
+		"pilah":  PILAH,
+		"pilih":  PILIH,
+		"benar":  BENAR,
+		"salah":  SALAH,
+		"nihil":  NIHIL,
+		"tiap":   TIAP,
+		"di":     DI,
+		"lanjut": LANJUT,
+		"usai":   USAI,
 	}
 )
 

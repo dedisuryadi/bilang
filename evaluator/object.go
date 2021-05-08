@@ -1,4 +1,4 @@
-package object
+package evaluator
 
 import (
 	"bytes"
@@ -25,11 +25,17 @@ const (
 	benar    = "benar"
 	salah    = "salah"
 	VOID     = "VOID"
+	BREAK    = "BREAK"
+	CONTINUE = "CONTINUE"
 )
 
 type Object interface {
 	Type() Type
 	Inspect() string
+}
+
+type Iterable interface {
+	Iter() bool
 }
 
 type BuiltinFunction func(args ...Object) Object
@@ -137,6 +143,7 @@ type String struct {
 	Value string
 }
 
+func (s *String) Iter() bool      { return true }
 func (s *String) Type() Type      { return STRING }
 func (s *String) Inspect() string { return s.Value }
 
@@ -144,6 +151,7 @@ type Array struct {
 	Elements []Object
 }
 
+func (a *Array) Iter() bool { return true }
 func (a *Array) Type() Type { return ARRAY }
 func (a *Array) Inspect() string {
 	var out bytes.Buffer
@@ -195,6 +203,7 @@ type Hash struct {
 	Pairs map[HashKey]HashPair
 }
 
+func (h *Hash) Iter() bool { return true }
 func (h *Hash) Type() Type { return HASH }
 func (h *Hash) Inspect() string {
 	var out bytes.Buffer
@@ -210,3 +219,13 @@ func (h *Hash) Inspect() string {
 
 	return out.String()
 }
+
+type Break struct{}
+
+func (b *Break) Inspect() string { return "usai" }
+func (b *Break) Type() Type      { return BREAK }
+
+type Continue struct{}
+
+func (c *Continue) Inspect() string { return "lanjut" }
+func (c *Continue) Type() Type      { return CONTINUE }

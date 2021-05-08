@@ -9,7 +9,6 @@ import (
 
 	"github.com/dedisuryadi/bilang/evaluator"
 	"github.com/dedisuryadi/bilang/lexer"
-	"github.com/dedisuryadi/bilang/object"
 	"github.com/dedisuryadi/bilang/parser"
 )
 
@@ -17,14 +16,14 @@ const PROMPT = "bilang >>"
 
 func Start(in io.Reader, out io.Writer) {
 	var (
-		env      = object.NewEnvironment()
+		env      = evaluator.NewEnvironment()
 		script   = evaluator.NewScript()
 		evaluate = func(input string) {
 			l := lexer.New(input)
 			p := parser.New(l)
-			prog := p.ParseProgram()
-			if len(p.Errors()) != 0 {
-				printParseErrors(out, p.Errors())
+			prog, err := p.ParseProgram()
+			if err != nil {
+				fmt.Println(err)
 				return
 			}
 			evaluated := script.Eval(prog, env)

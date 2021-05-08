@@ -248,6 +248,45 @@ func (fl *FunctionLiteral) String() string {
 	return out.String()
 }
 
+type LoopLiteral struct {
+	Token token.Token
+	KV    []*Identifier
+	Iter  *Identifier
+	Body  *BlockStatement
+}
+
+func (l LoopLiteral) expressionNode()      {}
+func (l LoopLiteral) TokenLiteral() string { return l.Token.Literal }
+func (l LoopLiteral) Type() token.Type     { return l.Token.Type }
+func (l LoopLiteral) String() string {
+	var out bytes.Buffer
+	out.WriteString("tiap " + l.KV[0].String())
+	if l.KV[1] != nil {
+		out.WriteString(", " + l.KV[1].String())
+	}
+	out.WriteString(" di " + l.Iter.String())
+	out.WriteString(l.Body.String())
+	return out.String()
+}
+
+type ContinueExpression struct {
+	Token token.Token
+}
+
+func (c ContinueExpression) expressionNode()      {}
+func (c ContinueExpression) TokenLiteral() string { return c.Token.Literal }
+func (c ContinueExpression) Type() token.Type     { return c.Token.Type }
+func (c ContinueExpression) String() string       { return c.Token.Literal + "\n" }
+
+type BreakExpression struct {
+	Token token.Token
+}
+
+func (b BreakExpression) expressionNode()      {}
+func (b BreakExpression) TokenLiteral() string { return b.Token.Literal }
+func (b BreakExpression) Type() token.Type     { return b.Token.Type }
+func (b BreakExpression) String() string       { return b.Token.Literal + "\n" }
+
 type PilahExpression struct {
 	Token      token.Token
 	Target     *ExpressionStatement

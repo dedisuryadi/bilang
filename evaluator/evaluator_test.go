@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/dedisuryadi/bilang/lexer"
-	"github.com/dedisuryadi/bilang/object"
 	"github.com/dedisuryadi/bilang/parser"
 )
 
@@ -37,17 +36,20 @@ func TestEvalIntegerExpression(t *testing.T) {
 	}
 }
 
-func testEval(input string) object.Object {
+func testEval(input string) Object {
 	l := lexer.New(input)
 	p := parser.New(l)
-	program := p.ParseProgram()
-	env := object.NewEnvironment()
+	program, err := p.ParseProgram()
+	if err != nil {
+		panic(err)
+	}
+	env := NewEnvironment()
 	script := NewScript()
 	return script.Eval(program, env)
 }
 
-func testIntegerObject(t *testing.T, obj object.Object, expected int64) bool {
-	result, ok := obj.(*object.Integer)
+func testIntegerObject(t *testing.T, obj Object, expected int64) bool {
+	result, ok := obj.(*Integer)
 	if !ok {
 		t.Errorf("object is not Integer. got=%T (%+v)", obj, obj)
 		return false
@@ -113,8 +115,8 @@ func TestEvalBooleanExpression(t *testing.T) {
 		testBooleanObject(t, evaluated, tt.expected, tt.input)
 	}
 }
-func testBooleanObject(t *testing.T, obj object.Object, expected bool, input string) bool {
-	result, ok := obj.(*object.Boolean)
+func testBooleanObject(t *testing.T, obj Object, expected bool, input string) bool {
+	result, ok := obj.(*Boolean)
 	if !ok {
 		t.Errorf("object is not Boolean. got=%T (%+v)", obj, obj)
 		return false
@@ -174,8 +176,8 @@ func TestIfElseExpressions(t *testing.T) {
 		}
 	}
 }
-func testNullObject(t *testing.T, obj object.Object) bool {
-	if obj != NULL {
+func testNullObject(t *testing.T, obj Object) bool {
+	if obj != _NULL {
 		t.Errorf("object is not NULL. got=%T (%+v)", obj, obj)
 		return false
 	}
@@ -261,7 +263,7 @@ pilih 1;
 	}
 	for _, tt := range tests {
 		evaluated := testEval(tt.input)
-		errObj, ok := evaluated.(*object.Error)
+		errObj, ok := evaluated.(*Error)
 		if !ok {
 			t.Errorf("no error object returned. got=%T(%+v)", evaluated, evaluated)
 			continue
@@ -292,9 +294,9 @@ func TestVarStatements(t *testing.T) {
 			testIntegerObject(t, res, tt.expected)
 			continue
 		}
-		_, ok := res.(*object.Error)
+		_, ok := res.(*Error)
 		if !ok {
-			t.Errorf("expected %v got %v", &object.Error{}, res)
+			t.Errorf("expected %v got %v", &Error{}, res)
 		}
 	}
 }
@@ -318,9 +320,9 @@ func TestKonstStatements(t *testing.T) {
 			testIntegerObject(t, res, tt.expected)
 			continue
 		}
-		_, ok := res.(*object.Error)
+		_, ok := res.(*Error)
 		if !ok {
-			t.Errorf("expected %v got %v", &object.Error{}, res)
+			t.Errorf("expected %v got %v", &Error{}, res)
 		}
 	}
 }
@@ -328,7 +330,7 @@ func TestKonstStatements(t *testing.T) {
 func TestFunctionObject(t *testing.T) {
 	input := "fn(x) { x + 2; };"
 	evaluated := testEval(input)
-	fn, ok := evaluated.(*object.Function)
+	fn, ok := evaluated.(*Function)
 	if !ok {
 		t.Fatalf("object is not Function. got=%T (%+v)", evaluated, evaluated)
 	}
@@ -382,7 +384,7 @@ func TestPilahExpression(t *testing.T) {
 					_ -> "lainnya"
 				}
 			`,
-			expected: &object.String{Value: "enam"},
+			expected: &String{Value: "enam"},
 		},
 		{
 			input: `
@@ -394,7 +396,7 @@ func TestPilahExpression(t *testing.T) {
 				}
 				y
 			`,
-			expected: &object.String{Value: "lainnya"},
+			expected: &String{Value: "lainnya"},
 		},
 	}
 	for _, tt := range tests {
@@ -433,7 +435,7 @@ func TestPipeExpression(t *testing.T) {
 				
 				z;
 			`,
-			expected: &object.String{Value: "b"},
+			expected: &String{Value: "b"},
 		},
 	}
 	for _, tt := range tests {
@@ -455,21 +457,21 @@ addTwo(2);`
 }
 
 func TestStringLiteral(t *testing.T) {
-	input := `"Hello World!"`
+	input := `"Hello World!\n"`
 	evaluated := testEval(input)
-	str, ok := evaluated.(*object.String)
+	str, ok := evaluated.(*String)
 	if !ok {
 		t.Fatalf("object is not String. got=%T (%+v)", evaluated, evaluated)
 	}
-	if str.Value != "Hello World!" {
-		t.Errorf("String has wrong value. got=%q", str.Value)
+	if str.Value != "Hello World!\n" {
+		t.Errorf("String has wrong value. got=%v expected=%v", str.Value, "Hello World!\n")
 	}
 }
 
 func TestStringConcatenation(t *testing.T) {
 	input := `"Hello" + " " + "World!"`
 	evaluated := testEval(input)
-	str, ok := evaluated.(*object.String)
+	str, ok := evaluated.(*String)
 	if !ok {
 		t.Fatalf("object is not String. got=%T (%+v)", evaluated, evaluated)
 	}
@@ -495,7 +497,7 @@ func TestBuiltinFunctions(t *testing.T) {
 		case int:
 			testIntegerObject(t, evaluated, int64(expected))
 		case string:
-			errObj, ok := evaluated.(*object.Error)
+			errObj, ok := evaluated.(*Error)
 			if !ok {
 				t.Errorf("object is not Error. got=%T (%+v)", evaluated, evaluated)
 				continue
@@ -510,7 +512,7 @@ func TestBuiltinFunctions(t *testing.T) {
 func TestArrayLiterals(t *testing.T) {
 	input := "[1, 2 * 2, 3 + 3]"
 	evaluated := testEval(input)
-	result, ok := evaluated.(*object.Array)
+	result, ok := evaluated.(*Array)
 	if !ok {
 		t.Fatalf("object is not Array. got=%T (%+v)", evaluated, evaluated)
 	}
@@ -629,17 +631,17 @@ benar: 5,
 salah: 6
 }`
 	evaluated := testEval(input)
-	result, ok := evaluated.(*object.Hash)
+	result, ok := evaluated.(*Hash)
 	if !ok {
 		t.Fatalf("Eval didn't return Hash. got=%T (%+v)", evaluated, evaluated)
 	}
-	expected := map[object.HashKey]int64{
-		(&object.String{Value: "one"}).HashKey():   1,
-		(&object.String{Value: "two"}).HashKey():   2,
-		(&object.String{Value: "three"}).HashKey(): 3,
-		(&object.Integer{Value: 4}).HashKey():      4,
-		TRUE.HashKey():                             5,
-		FALSE.HashKey():                            6,
+	expected := map[HashKey]int64{
+		(&String{Value: "one"}).HashKey():   1,
+		(&String{Value: "two"}).HashKey():   2,
+		(&String{Value: "three"}).HashKey(): 3,
+		(&Integer{Value: 4}).HashKey():      4,
+		_TRUE.HashKey():                     5,
+		_FALSE.HashKey():                    6,
 	}
 	if len(result.Pairs) != len(expected) {
 		t.Fatalf("Hash has wrong num of pairs. got=%d", len(result.Pairs))

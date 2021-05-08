@@ -252,7 +252,10 @@ func TestNextToken(t *testing.T) {
 
 	l := New(input)
 	for i, tt := range tests {
-		tok := l.NextToken()
+		tok, err := l.NextToken()
+		if err != nil {
+			t.Fatal(err)
+		}
 		if tok.Type != tt.expectedType {
 			t.Fatalf("tests[%d] - tokentype wrong. expected=%q, got=%q", i, tt.expectedType, tok.Type)
 		}

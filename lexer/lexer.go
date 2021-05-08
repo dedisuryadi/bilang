@@ -1,6 +1,11 @@
 package lexer
 
-import "github.com/dedisuryadi/bilang/token"
+import (
+	"errors"
+	"fmt"
+
+	"github.com/dedisuryadi/bilang/token"
+)
 
 type Lexer struct {
 	input        string
@@ -16,7 +21,7 @@ func New(input string) *Lexer {
 	return l
 }
 
-func (l *Lexer) NextToken() token.Token {
+func (l *Lexer) NextToken() (token.Token, error) {
 	var tok token.Token
 
 	l.skipWhitespace()
@@ -39,8 +44,12 @@ func (l *Lexer) NextToken() token.Token {
 	case ';':
 		tok = newToken(token.SEMICOLON, l.ch)
 	case '"':
+		str, err := l.readString()
+		if err != nil {
+			return tok, err
+		}
+		tok.Literal = str
 		tok.Type = token.STRING
-		tok.Literal = l.readString()
 	case '(':
 		tok = newToken(token.LPAREN, l.ch)
 	case ')':
@@ -144,21 +153,22 @@ func (l *Lexer) NextToken() token.Token {
 			tok.Literal = ident
 			tok.Type = token.LookupIdent(ident)
 			l.prev = tok
-			return tok
+			return tok, nil
 		} else if isDigit(l.ch) {
 			tok.Type = token.INT
 			tok.Literal = l.readNumber()
 			l.prev = tok
-			return tok
+			return tok, nil
 		} else {
 			tok = newToken(token.ILLEGAL, l.ch)
+			return tok, fmt.Errorf("illegal syntax on %v token %s", l.position, tok.Literal)
 		}
 	}
 
 	l.readChar()
 	l.prev = tok
 
-	return tok
+	return tok, nil
 }
 
 func (l *Lexer) readChar() {
@@ -201,17 +211,46 @@ func (l *Lexer) readNumber() string {
 	return l.input[position:l.position]
 }
 
-func (l *Lexer) readString() string {
-	pos := l.position + 1
+func (l *Lexer) readString() (string, error) {
+	var ret []byte
 	for {
 		l.readChar()
 		if l.ch == '\\' {
 			l.readChar()
+			switch l.ch {
+			case 'a':
+				ret = append(ret, '\a')
+				continue
+			case 'b':
+				ret = append(ret, '\b')
+				continue
+			case 'f':
+				ret = append(ret, '\f')
+				continue
+			case 'r':
+				ret = append(ret, '\r')
+				continue
+			case 'n':
+				ret = append(ret, '\n')
+				continue
+			case 't':
+				ret = append(ret, '\t')
+				continue
+			case 'v':
+				ret = append(ret, '\v')
+				continue
+			}
+			ret = append(ret, '\\', l.ch)
+			continue
 		} else if l.ch == '"' {
 			break
+		} else if len(ret) > len(l.input) {
+			return "", errors.New("syntax error")
+		} else {
+			ret = append(ret, l.ch)
 		}
 	}
-	return l.input[pos:l.position]
+	return string(ret), nil
 }
 
 func (l *Lexer) readRegex(delim byte) (lit string) {
