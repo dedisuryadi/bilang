@@ -76,6 +76,8 @@ var (
 type Type string
 
 type Token struct {
+	Col     int
+	Line    int
 	Type    Type
 	Literal string
 }

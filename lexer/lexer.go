@@ -8,15 +8,17 @@ import (
 )
 
 type Lexer struct {
-	input        string
+	ch           byte
 	position     int
 	readPosition int
-	ch           byte
+	col          int
+	line         int
+	input        string
 	prev         token.Token
 }
 
 func New(input string) *Lexer {
-	l := &Lexer{input: input}
+	l := &Lexer{input: input, col: 1, line: 1}
 	l.readChar()
 	return l
 }
@@ -165,9 +167,12 @@ func (l *Lexer) NextToken() (token.Token, error) {
 		}
 	}
 
-	l.readChar()
-	l.prev = tok
+	tok.Col = l.col
+	tok.Line = l.line
 
+	l.readChar()
+
+	l.prev = tok
 	return tok, nil
 }
 
@@ -176,6 +181,12 @@ func (l *Lexer) readChar() {
 		l.ch = 0 // ASCII for NUL
 	} else {
 		l.ch = l.input[l.readPosition]
+		if l.ch == '\n' {
+			l.col = 1
+			l.line += 1
+		} else {
+			l.col += 1
+		}
 	}
 	l.position = l.readPosition
 	l.readPosition += 1

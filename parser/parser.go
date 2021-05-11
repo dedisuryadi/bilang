@@ -123,9 +123,14 @@ func New(l *lexer.Lexer) *Parser {
 	return p
 }
 
+func (p *Parser) appendPosition() {
+	p.errors = append(p.errors, fmt.Sprintf("pada baris %d dan kolom %d", p.curToken.Line, p.curToken.Col))
+}
+
 func (p *Parser) ParseProgram() (prog *ast.Program, err error) {
 	defer func() {
 		if r := recover(); r != nil {
+			p.appendPosition()
 			err = p
 		}
 	}()
@@ -138,6 +143,7 @@ func (p *Parser) ParseProgram() (prog *ast.Program, err error) {
 		}
 		p.nextToken()
 		if len(p.errors) > 0 {
+			p.appendPosition()
 			return nil, p
 		}
 	}
