@@ -1,0 +1,30 @@
+name: Go
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.15
+
+    - name: Check code formatting using gofmt
+      # You may pin to the exact commit or the version.
+      # uses: Jerome1337/gofmt-action@4899d680cd7d4a959becfe74f97170c5847f859c
+      uses: Jerome1337/gofmt-action@v1.0.4
+
+    - name: Build
+      run: go build -v ./...
+
+    - name: Test
+      run: go test -v ./...
